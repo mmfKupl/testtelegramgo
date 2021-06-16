@@ -15,6 +15,7 @@ type AppConfig struct {
 	ChatID                  int64  `json:"chatID"`
 	DisplayedMessagesAmount uint   `json:"displayedMessagesAmount"`
 	Port                    string `json:"port"`
+	AdminPassword           string `json:"adminPassword"`
 }
 
 const defaultConfigName string = "config.json"

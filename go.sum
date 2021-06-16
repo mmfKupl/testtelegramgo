@@ -12,3 +12,5 @@ github.com/mmfKupl/gosse v0.4.2 h1:iXo7DaFwfu4MycTBbrIoFQ5+q5cIsLo2aQvdiYZ/Fck=
 github.com/mmfKupl/gosse v0.4.2/go.mod h1:geXvA0CqfuDlVYXHr6rGPh/QDNdb0angbYQt+55ftEo=
 github.com/mmfKupl/gosse v0.5.0 h1:l6fiIhdwl8qiLOMU8Vkija93E8JiwR8i3Z1ONLKq4mE=
 github.com/mmfKupl/gosse v0.5.0/go.mod h1:geXvA0CqfuDlVYXHr6rGPh/QDNdb0angbYQt+55ftEo=
+github.com/mmfKupl/gosse v0.6.0 h1:/rQaPcnpX0b5SvB8qjGmWUWByJg2E4BSKbx98rANOJM=
+github.com/mmfKupl/gosse v0.6.0/go.mod h1:geXvA0CqfuDlVYXHr6rGPh/QDNdb0angbYQt+55ftEo=

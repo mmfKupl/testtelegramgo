@@ -18,3 +18,5 @@
 /tdlib-db/
 
 .idea
+
+configs/config.json

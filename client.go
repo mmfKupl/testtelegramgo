@@ -2,6 +2,7 @@ package testtelegramgo
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -92,7 +93,31 @@ func (appClient *AppClient) StartAppClient() error {
 		}
 	}()
 
-	http.Handle("/", appClient.notifier)
+	http.Handle("/connect", appClient.notifier)
+	http.HandleFunc("/pulse", func(w http.ResponseWriter, r *http.Request) {
+		header := r.Header.Get("pw")
+		if header != appClient.appConfig.AdminPassword {
+			http.Error(w, "{ \"error\": \"Forbidden\" }", http.StatusForbidden)
+			return
+		}
+		nt := appClient.notifier.(*gosse.Notifier)
+		clientsAmount := len(nt.GetClients())
+		connectionsAmount := 0
+		for _, connections := range nt.GetClientsConnections() {
+			connectionsAmount += len(connections)
+		}
+
+		b, err := json.Marshal(map[string]int{
+			"clientsAmount":     clientsAmount,
+			"connectionsAmount": connectionsAmount,
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("{ \"error\": \"%v\" }", err), http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write(b)
+		w.WriteHeader(http.StatusOK)
+	})
 
 	port := fmt.Sprintf(":%s", appClient.appConfig.Port)
 	fmt.Printf("Server started on port %s\n", port)

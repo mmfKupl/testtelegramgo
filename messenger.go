@@ -48,7 +48,7 @@ func (m Messenger) GetFormattedMessages(messages tdlib.Messages) gosse.Message {
 
 	b, err := json.Marshal(messagesToSend)
 	if err != nil {
-		return gosse.Message(fmt.Sprintf("{ error: \"%v\" }", err))
+		return gosse.Message(fmt.Sprintf("{ \"error\": \"%v\" }", err))
 	}
 
 	return b
