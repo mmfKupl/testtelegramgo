@@ -8,11 +8,13 @@ import (
 )
 
 type AppConfig struct {
-	Password string `json:"password"`
-	Tel      string `json:"tel"`
-	ApiId    string `json:"apiId"`
-	ApiHash  string `json:"apiHash"`
-	ChatID   int64  `json:"chatID"`
+	Password                string `json:"password"`
+	Tel                     string `json:"tel"`
+	ApiId                   string `json:"apiId"`
+	ApiHash                 string `json:"apiHash"`
+	ChatID                  int64  `json:"chatID"`
+	DisplayedMessagesAmount uint   `json:"displayedMessagesAmount"`
+	Port                    string `json:"port"`
 }
 
 const defaultConfigName string = "config.json"

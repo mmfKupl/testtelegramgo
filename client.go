@@ -1,15 +1,19 @@
 package testtelegramgo
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/Arman92/go-tdlib"
+	"github.com/mmfKupl/gosse"
 )
 
 type AppClient struct {
-	// TODO: make fields private
-	TdClient  *tdlib.Client
-	AppConfig *AppConfig
+	tdClient  *tdlib.Client
+	appConfig *AppConfig
+	messenger *Messenger
+	notifier  gosse.INotifier
 }
 
 func GetAppClient(configName string) (*AppClient, error) {
@@ -38,26 +42,67 @@ func GetAppClient(configName string) (*AppClient, error) {
 	})
 
 	appClient := &AppClient{
-		TdClient:  client,
-		AppConfig: config,
+		tdClient:  client,
+		appConfig: config,
+		messenger: &Messenger{},
+		notifier:  getNotifier(),
 	}
+
+	appClient.notifier.RegisterOnConnectionRegistered(func(c gosse.IClient, conn gosse.IConnection) {
+		go func() {
+			if conn != nil {
+				conn.Notify(appClient.messenger.GetFormattedMessages(*appClient.messenger.messagesStore))
+			} else {
+				fmt.Printf("Current Connection Dosen't Exist - %v", c.GetId())
+			}
+		}()
+	})
 
 	return appClient, nil
 }
 
 func (appClient *AppClient) StartAppClient() error {
+	mainContext, closeMainContext := context.WithCancel(context.Background())
+	defer closeMainContext()
+
 	err := appClient.initAppClient()
 	if err != nil {
 		return fmt.Errorf("Fail to init appClient: %v. ", err)
 	}
 
 	fmt.Println("Authorization Ready! Let's rock")
-	return nil
+	appClient.initMessenger()
+	defer func() {
+		closeMainContext()
+		appClient.messenger.Close()
+	}()
+
+	go func() {
+		for updates := range appClient.messenger.MessageUpdates {
+			fmt.Printf("Received %v messages from messanger \n", updates.TotalCount)
+			appClient.notifier.NotifyAll(appClient.messenger.GetFormattedMessages(updates))
+		}
+	}()
+
+	go func() {
+		err = appClient.StartMessenger(mainContext)
+		if err != nil {
+			closeMainContext()
+			panic(err)
+		}
+	}()
+
+	http.Handle("/", appClient.notifier)
+
+	port := fmt.Sprintf(":%s", appClient.appConfig.Port)
+	fmt.Printf("Server started on port %s\n", port)
+	err = http.ListenAndServe(port, nil)
+	return err
 }
 
 func (appClient *AppClient) initAppClient() error {
-	tdClient := appClient.TdClient
-	appConfig := appClient.AppConfig
+	tdClient := appClient.tdClient
+	appConfig := appClient.appConfig
 
 	for {
 		currentState, _ := tdClient.Authorize()
@@ -88,4 +133,19 @@ func (appClient *AppClient) initAppClient() error {
 	}
 
 	return nil
+}
+
+func getNotifier() gosse.INotifier {
+	notifier := &gosse.Notifier{}
+	notifier.Init()
+	notifier.RegisterClientIdentifier(clientIdentifier)
+	return notifier
+}
+
+func clientIdentifier(r *http.Request) (string, error) {
+	clientId := r.RemoteAddr
+	if clientId == "" {
+		return "", fmt.Errorf("Empty RemoteAddr recieved. ")
+	}
+	return clientId, nil
 }
