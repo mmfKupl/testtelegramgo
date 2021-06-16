@@ -18,6 +18,7 @@ type Message struct {
 	ID   int64  `json:"id"`
 	Date int32  `json:"date"`
 	Text string `json:"text"`
+	Link string `json:"link"`
 }
 
 type MessagesToSend struct {
@@ -25,7 +26,7 @@ type MessagesToSend struct {
 	Messages    []Message `json:"messages"`
 }
 
-func (m Messenger) GetFormattedMessages(messages tdlib.Messages) gosse.Message {
+func (appClient *AppClient) GetFormattedMessages(messages tdlib.Messages) gosse.Message {
 	messagesToSend := MessagesToSend{
 		TotalAmount: messages.TotalCount,
 		Messages:    make([]Message, 0, 0),
@@ -39,10 +40,16 @@ func (m Messenger) GetFormattedMessages(messages tdlib.Messages) gosse.Message {
 		} else {
 			messageText = messageContent.Text.Text
 		}
+		link := ""
+		messageLink, err := appClient.tdClient.GetMessageLink(appClient.getChatId(), message.ID, false, false)
+		if err == nil {
+			link = messageLink.Link
+		}
 		messagesToSend.Messages = append(messagesToSend.Messages, Message{
 			ID:   message.ID,
 			Date: message.Date,
 			Text: messageText,
+			Link: link,
 		})
 	}
 

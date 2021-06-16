@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/Arman92/go-tdlib"
@@ -52,7 +53,7 @@ func GetAppClient(configName string) (*AppClient, error) {
 	appClient.notifier.RegisterOnConnectionRegistered(func(c gosse.IClient, conn gosse.IConnection) {
 		go func() {
 			if conn != nil {
-				conn.Notify(appClient.messenger.GetFormattedMessages(*appClient.messenger.messagesStore))
+				conn.Notify(appClient.GetFormattedMessages(*appClient.messenger.messagesStore))
 			} else {
 				fmt.Printf("Current Connection Dosen't Exist - %v", c.GetId())
 			}
@@ -80,8 +81,8 @@ func (appClient *AppClient) StartAppClient() error {
 
 	go func() {
 		for updates := range appClient.messenger.MessageUpdates {
-			fmt.Printf("Received %v messages from messanger \n", updates.TotalCount)
-			appClient.notifier.NotifyAll(appClient.messenger.GetFormattedMessages(updates))
+			log.Printf("Received %v messages from messanger \n", updates.TotalCount)
+			appClient.notifier.NotifyAll(appClient.GetFormattedMessages(updates))
 		}
 	}()
 
