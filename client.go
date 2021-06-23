@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 
 	"github.com/Arman92/go-tdlib"
 	"github.com/mmfKupl/gosse"
@@ -107,10 +108,22 @@ func (appClient *AppClient) StartAppClient() error {
 		for _, connections := range nt.GetClientsConnections() {
 			connectionsAmount += len(connections)
 		}
+		clientIds := make([]string, 0, clientsAmount)
+		for _, client := range nt.GetClients() {
+			clientIds = append(clientIds, client.GetId())
+		}
 
-		b, err := json.Marshal(map[string]int{
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
+
+		b, err := json.Marshal(map[string]interface{}{
 			"clientsAmount":     clientsAmount,
+			"clientIds":         clientIds,
 			"connectionsAmount": connectionsAmount,
+			"alloc":             bToMb(m.Alloc),
+			"totalAlloc":        bToMb(m.TotalAlloc),
+			"sys":               bToMb(m.Sys),
+			"munGC":             int(m.NumGC),
 		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("{ \"error\": \"%v\" }", err), http.StatusInternalServerError)
@@ -124,6 +137,9 @@ func (appClient *AppClient) StartAppClient() error {
 	fmt.Printf("Server started on port %s\n", port)
 	err = http.ListenAndServe(port, nil)
 	return err
+}
+func bToMb(b uint64) string {
+	return fmt.Sprintf("%v Mb", b/1024/1024)
 }
 
 func (appClient *AppClient) initAppClient() error {
@@ -170,6 +186,10 @@ func getNotifier() gosse.INotifier {
 
 func clientIdentifier(r *http.Request) (string, error) {
 	clientId := r.RemoteAddr
+	forwardedFor := r.Header.Get("X-FORWARDED-FOR")
+	if forwardedFor != "" {
+		clientId = forwardedFor
+	}
 	if clientId == "" {
 		return "", fmt.Errorf("Empty RemoteAddr recieved. ")
 	}
